@@ -7,6 +7,7 @@ import json
 import sys
 import os
 import psutil
+from PyQt5 import QtCore
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QCursor
@@ -43,6 +44,7 @@ class Utils:
         @staticmethod
         def instance_conflict():
             current_process = psutil.Process()
+            print(current_process)
             for process in psutil.process_iter(['pid', 'name']):
                 if process.info['name'] == current_process.name() and process.info['pid'] != current_process.pid:
                     return True
@@ -133,6 +135,8 @@ class TransparentWindow(QWidget):
 
 
 class PresetsConfigWidget(QDialog):
+    exit_signal = QtCore.pyqtSignal(str)
+
     class EditNameMessageBox(MessageBoxBase):
         def __init__(self, parent=None, place_holder="Preset Name", text=None):
             super().__init__(parent=parent)
@@ -370,6 +374,9 @@ class PresetsConfigWidget(QDialog):
         Utils.Data.json_write("config.json", self.config)
         self.close()
 
+    def closeEvent(self, event):
+        self.exit_signal.emit("1")
+
 
 class MainWidget(QWidget):
     class IntervalSettingMessageBox(MessageBoxBase):
@@ -492,6 +499,10 @@ class MainWidget(QWidget):
         """
         if not self.detect():
             self.mapping_status.setChecked(False)
+            nc = MessageBox("No Controller Detected", "Make sure your controller is connected properly.", self)
+            nc.cancelButton.hide()
+            if nc.exec():
+                pass
             return False
         joystick = pygame.joystick.Joystick(0)
         joystick.init()
@@ -613,15 +624,15 @@ class MainWidget(QWidget):
 
     def refresh(self):
         self.config = Utils.Data.json_read("config.json")
-        self.stop_mapping()
+        self.mapping_status.setChecked(False)
         self.init_ui()
 
     def about(self):
+        self.show()
         content = f"""
-        Controller-Keyboard Mapper
+        Controller-Keyboard Mapper (v1.1.0)
         A convenient tool built with PyQt-Fluent-Widgets
         Author: Rinne
-        Version: 1.1.0
         Last-Update: 2024.08.02
         All copyrights reserved.
         """
@@ -649,6 +660,7 @@ class MainWidget(QWidget):
     def presets_config(self):
         self.mapping_status.setChecked(False)
         self.settingWidget.exec()
+        self.settingWidget.exit_signal.connect(self.refresh)
 
     def stop_mapping(self):
         print("Stopped Controller Mapping")
@@ -737,7 +749,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     # Disable Launch-Check when testing in PyCharm
-
     # launch_check()
     w = MainWidget()
     w.show()
