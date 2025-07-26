@@ -5,8 +5,8 @@
     3 -> Y
     4 -> LB
     5 -> RB
-    6 -> SCREENSHOT
-    7 -> SETTINGS
+    6 -> VIEW
+    7 -> MENU
     8 -> LS
     9 -> RS
 }
